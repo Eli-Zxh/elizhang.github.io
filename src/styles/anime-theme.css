@@ -1,0 +1,201 @@
+/* 二次元风格主题 */
+@import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+:root {
+  --sakura-pink: #FFB7C5;
+  --sakura-light: #FFD6E0;
+  --sky-blue: #87CEEB;
+  --sky-light: #B8E4F0;
+  --cream: #FFFAF0;
+  --cream-dark: #F5F0E8;
+  --text-dark: #4A4A4A;
+  --text-light: #8A8A8A;
+  --white: #FFFFFF;
+  --shadow: 0 4px 15px rgba(255, 183, 197, 0.3);
+  --shadow-hover: 0 6px 25px rgba(135, 206, 235, 0.4);
+  --radius: 18px;
+  --radius-sm: 12px;
+  --font-main: 'ZCOOL XiaoWei', 'Noto Sans SC', sans-serif;
+  --font-mono: 'Fira Code', monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-main);
+  color: var(--text-dark);
+  background: linear-gradient(135deg, var(--cream) 0%, var(--sakura-light) 50%, var(--sky-light) 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  line-height: 1.7;
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--sakura-pink);
+  border-radius: 3px;
+}
+
+/* 容器 */
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* 卡片 */
+.card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  border: 2px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-hover);
+  border-color: var(--sakura-pink);
+  transform: translateY(-2px);
+}
+
+/* 按钮 */
+.btn {
+  display: inline-block;
+  padding: 10px 24px;
+  border: none;
+  border-radius: 25px;
+  font-family: var(--font-main);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--sakura-pink), var(--sky-blue));
+  color: var(--white);
+  box-shadow: 0 3px 10px rgba(255, 183, 197, 0.4);
+}
+
+.btn-primary:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 20px rgba(135, 206, 235, 0.5);
+}
+
+/* 标签 */
+.tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 15px;
+  font-size: 12px;
+  background: linear-gradient(135deg, var(--sakura-light), var(--sky-light));
+  color: var(--text-dark);
+  margin: 2px 4px;
+}
+
+/* 导航动画 */
+.nav-link {
+  position: relative;
+  color: var(--text-dark);
+  text-decoration: none;
+  font-weight: 500;
+  padding: 6px 12px;
+  transition: color 0.3s;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--sakura-pink);
+  transition: all 0.3s;
+  transform: translateX(-50%);
+}
+
+.nav-link:hover::after,
+.nav-link.router-link-active::after {
+  width: 80%;
+}
+
+/* 文章内容 */
+.post-content {
+  font-size: 16px;
+  line-height: 2;
+}
+
+.post-content h1 { font-size: 1.8em; color: var(--text-dark); margin: 1.2em 0 0.6em; }
+.post-content h2 { font-size: 1.4em; color: #555; margin: 1em 0 0.5em; padding-left: 12px; border-left: 3px solid var(--sakura-pink); }
+.post-content h3 { font-size: 1.2em; color: #666; margin: 0.8em 0 0.4em; }
+.post-content img { max-width: 100%; border-radius: 8px; margin: 12px 0; }
+.post-content table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+.post-content td, .post-content th { border: 1px solid #eee; padding: 8px 12px; text-align: left; }
+.post-content th { background: var(--sakura-light); }
+.post-content tr:nth-child(even) { background: #fafafa; }
+.post-content code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); font-size: 0.9em; }
+.post-content pre { background: #2d2d2d; color: #f8f8f2; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 12px 0; }
+.post-content blockquote { border-left: 3px solid var(--sky-blue); padding: 8px 16px; margin: 12px 0; background: rgba(135, 206, 235, 0.1); border-radius: 0 8px 8px 0; }
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .container { padding: 12px; }
+  .card { padding: 16px; }
+  .post-content { font-size: 15px; }
+}
+
+/* 加载动画 */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.floating { animation: float 3s ease-in-out infinite; }
+
+/* 樱花飘落背景 (纯CSS) */
+body::before {
+  content: '🌸';
+  position: fixed;
+  top: -10px;
+  left: 5%;
+  font-size: 20px;
+  opacity: 0.15;
+  animation: fall 12s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+body::after {
+  content: '💮';
+  position: fixed;
+  top: -10px;
+  right: 8%;
+  font-size: 18px;
+  opacity: 0.12;
+  animation: fall 15s linear infinite;
+  animation-delay: 3s;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes fall {
+  0% { transform: translateY(-5vh) rotate(0deg); }
+  100% { transform: translateY(105vh) rotate(360deg); }
+}
+
+/* 搜索高亮 */
+mark {
+  background: linear-gradient(transparent 60%, var(--sakura-pink) 60%);
+  padding: 0 2px;
+}
