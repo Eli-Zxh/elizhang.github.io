@@ -5,15 +5,12 @@
       <input
         v-model="query"
         type="text"
-        class="search-input"
-        placeholder="搜索笔记关键词..."
+        placeholder="搜索文章..."
         @keyup.enter="doSearch"
       />
-      <button v-if="query" class="search-clear" @click="query = ''" title="清除">✕</button>
+      <button v-if="query" class="search-clear" @click="query = ''">✕</button>
     </div>
-    <button class="btn btn-primary" @click="doSearch">
-      <span>搜索</span>
-    </button>
+    <button class="search-btn" @click="doSearch">搜索</button>
   </div>
 </template>
 
@@ -26,76 +23,44 @@ const query = ref('')
 
 function doSearch() {
   const q = query.value.trim()
-  if (q) {
-    router.push({ name: 'Search', query: { q } })
-  }
+  if (q) router.push({ name: 'Search', query: { q } })
 }
 </script>
 
 <style scoped>
 .search-box {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 28px;
+  display: flex; gap: 10px; margin-bottom: 28px;
 }
-
 .search-input-wrap {
-  flex: 1;
-  position: relative;
-  display: flex;
-  align-items: center;
+  flex: 1; position: relative; display: flex; align-items: center;
 }
-
 .search-icon {
-  position: absolute;
-  left: 16px;
-  font-size: 16px;
-  pointer-events: none;
-  opacity: 0.6;
+  position: absolute; left: 14px; font-size: 1rem;
+  pointer-events: none; color: var(--text-muted);
 }
-
-.search-input {
-  width: 100%;
-  padding: 13px 36px 13px 44px;
-  border: 2px solid var(--sakura-light);
-  border-radius: var(--radius-full);
-  font-size: 15px;
-  font-family: var(--font-main);
-  outline: none;
-  transition: all var(--transition);
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
+.search-input-wrap input {
+  width: 100%; padding: 12px 36px 12px 42px;
+  border: 1px solid var(--border); border-radius: 24px;
+  font-size: 0.95rem; color: var(--text); outline: none;
+  background: var(--card-bg); transition: var(--transition);
 }
-
-.search-input:focus {
-  border-color: var(--sky-blue);
-  box-shadow: 0 0 0 4px rgba(135, 206, 235, 0.15);
-  background: var(--white);
-}
-
-.search-input::placeholder {
-  color: var(--text-muted);
-}
-
+.search-input-wrap input:focus { border-color: var(--accent); box-shadow: var(--shadow-sm); }
+.search-input-wrap input::placeholder { color: var(--text-muted); }
 .search-clear {
-  position: absolute;
-  right: 12px;
-  background: var(--sakura-light);
-  border: none;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 12px;
-  color: var(--text-light);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition);
+  position: absolute; right: 10px;
+  background: var(--tag-bg); border: none;
+  width: 22px; height: 22px; border-radius: 50%;
+  cursor: pointer; font-size: 12px; color: var(--text-muted);
+  display: flex; align-items: center; justify-content: center;
+  transition: var(--transition);
 }
+.search-clear:hover { background: var(--accent); color: #fff; }
 
-.search-clear:hover {
-  background: var(--sakura-pink);
-  color: var(--white);
+.search-btn {
+  padding: 12px 28px; border: none; border-radius: 24px;
+  background: var(--accent); color: #fff;
+  font-size: 0.95rem; font-weight: 500; cursor: pointer;
+  transition: var(--transition); white-space: nowrap;
 }
+.search-btn:hover { background: var(--accent-hover); }
 </style>

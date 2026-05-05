@@ -1,26 +1,23 @@
 <template>
-  <div class="post-page">
-    <!-- 阅读进度条 -->
+  <div class="post-page container" style="max-width: 800px; padding-top: 32px; padding-bottom: 48px;">
     <div class="reading-progress" :style="{ width: progress + '%' }"></div>
 
     <router-link to="/" class="back-link">← 返回首页</router-link>
 
-    <!-- 加载中 -->
     <div v-if="loading" class="loading-state">
       <div class="loading-spinner"></div>
-      <p>加载文章中...</p>
+      <p style="margin-top:12px">加载文章中...</p>
     </div>
 
-    <!-- 文章内容 -->
-    <article v-else-if="post" class="post-article card">
+    <article v-else-if="post" class="post-article">
       <header class="post-header">
-        <div class="post-header-meta">
-          <span class="tag tag-primary">{{ post.category }}</span>
+        <div class="post-header-top">
+          <span class="card-category">{{ post.category }}</span>
           <span v-if="post.created_at" class="post-date">{{ post.created_at }}</span>
         </div>
         <h1 class="post-title">{{ post.title }}</h1>
         <div v-if="keywords.length" class="post-keywords">
-          <span v-for="kw in keywords" :key="kw" class="tag tag-outline">{{ kw }}</span>
+          <span v-for="kw in keywords" :key="kw" class="tag">#{{ kw }}</span>
         </div>
       </header>
 
@@ -28,30 +25,21 @@
 
       <div class="post-content" v-html="post.content_html"></div>
 
-      <div class="post-footer">
-        <p class="post-end-mark">— EOF —</p>
-      </div>
+      <div class="post-end">— EOF —</div>
     </article>
 
-    <!-- 未找到 -->
     <div v-else class="error-state">
-      <span class="error-icon">😢</span>
+      <span class="icon">😢</span>
       <p>文章未找到</p>
-      <router-link to="/" class="btn btn-outline">返回首页</router-link>
+      <router-link to="/" style="color: var(--accent); margin-top:12px; display:inline-block;">返回首页</router-link>
     </div>
 
-    <!-- 评论 -->
     <CommentSection v-if="post" :post-path="post.path" />
-
-    <!-- 返回按钮 -->
-    <div class="post-nav">
-      <router-link to="/" class="btn btn-outline">← 返回首页</router-link>
-    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { getPost } from '../api'
 import CommentSection from '../components/CommentSection.vue'
@@ -63,132 +51,61 @@ const progress = ref(0)
 
 const keywords = computed(() => {
   if (!post.value?.keywords) return []
-  return post.value.keywords.split(',').slice(0, 8).filter(Boolean)
+  return post.value.keywords.split(',').slice(0, 8).map(k => k.trim()).filter(Boolean)
 })
 
 function onScroll() {
-  const scrollTop = window.scrollY
-  const docHeight = document.documentElement.scrollHeight - window.innerHeight
-  if (docHeight > 0) {
-    progress.value = Math.min(100, (scrollTop / docHeight) * 100)
-  }
+  const h = document.documentElement.scrollHeight - window.innerHeight
+  if (h > 0) progress.value = Math.min(100, (window.scrollY / h) * 100)
 }
 
 onMounted(async () => {
   window.addEventListener('scroll', onScroll)
-  try {
-    const fullPath = route.params.path
-    post.value = await getPost(fullPath)
-  } catch (e) {
-    console.error('加载文章失败', e)
-  } finally {
-    loading.value = false
-  }
+  try { post.value = await getPost(route.params.path) }
+  catch (e) { console.error('加载文章失败', e) }
+  finally { loading.value = false }
 })
 
-onBeforeUnmount(() => {
-  window.removeEventListener('scroll', onScroll)
-})
+onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 </script>
 
 <style scoped>
-.loading-state {
-  text-align: center;
-  padding: 80px 20px;
-  color: var(--text-light);
-}
+.back-link { color: var(--text-secondary); font-size: 0.9rem; display: inline-block; margin-bottom: 20px; transition: var(--transition); }
+.back-link:hover { color: var(--accent); }
 
-.error-state {
-  text-align: center;
-  padding: 80px 20px;
-}
-
-.error-icon {
-  font-size: 48px;
-  display: block;
-  margin-bottom: 12px;
-}
-
-.error-state p {
-  color: var(--text-light);
-  margin-bottom: 20px;
-}
-
-/* 文章卡片 */
 .post-article {
-  padding: 32px;
-  animation: fadeInUp 0.5s ease;
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  padding: 36px 40px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 28px;
 }
-
-.post-header {
-  margin-bottom: 8px;
+.post-header { margin-bottom: 8px; }
+.post-header-top { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.card-category {
+  background: var(--accent-light); color: var(--accent);
+  padding: 4px 14px; border-radius: 14px;
+  font-weight: 600; font-size: 0.82rem;
 }
-
-.post-header-meta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.post-date {
-  color: var(--text-muted);
-  font-size: 13px;
-}
-
+.post-date { color: var(--text-muted); font-size: 0.85rem; }
 .post-title {
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1.4;
-  margin-bottom: 14px;
+  font-family: var(--font-serif);
+  font-size: 1.8rem; font-weight: 700;
+  line-height: 1.4; margin-bottom: 14px;
 }
 
-.post-keywords {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 12px;
-}
+.post-keywords { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 
 .post-divider {
-  height: 2px;
-  background: linear-gradient(90deg, var(--sakura-light), var(--sky-light), transparent);
+  height: 1px; background: var(--border);
   margin: 24px 0 28px;
 }
 
-.post-footer {
-  text-align: center;
-  padding: 30px 0 10px;
-}
-
-.post-end-mark {
-  color: var(--text-muted);
-  font-size: 14px;
-  letter-spacing: 2px;
-}
-
-.post-nav {
-  text-align: center;
-  padding: 10px 0 30px;
-}
+.post-end { text-align: center; color: var(--text-muted); font-size: 0.9rem; padding: 30px 0 10px; letter-spacing: 2px; }
 
 @media (max-width: 768px) {
-  .post-article {
-    padding: 20px;
-  }
-
-  .post-title {
-    font-size: 22px;
-  }
-}
-
-@media (max-width: 480px) {
-  .post-article {
-    padding: 16px;
-  }
-
-  .post-title {
-    font-size: 20px;
-  }
+  .post-article { padding: 24px 20px; }
+  .post-title { font-size: 1.4rem; }
 }
 </style>

@@ -1,6 +1,6 @@
-# 个人博客 - 前端
+# Eli的建站经验分享 - 前端
 
-基于 Vue 3 + Vite + Vue Router 的个人博客前端，采用樱色/天空色二次元风格。
+基于 Vue 3 + Vite + Vue Router 的个人博客前端，暖色调简约风格。
 
 ## 快速启动
 
@@ -10,7 +10,7 @@ npm run dev        # 开发服务器 http://localhost:5173
 npm run build      # 生产构建 → dist/
 ```
 
-后端 API 需在 `localhost:8765` 运行，路径前缀 `/api`。
+后端 API：`http://59.110.30.48:8765/api`
 
 ## 项目结构
 
@@ -24,14 +24,15 @@ src/
 ├── composables/
 │   └── useTyped.js         # 打字机效果
 ├── views/
-│   ├── Home.vue            # 首页（Hero + 分类）
+│   ├── Home.vue            # 首页（Hero + 文章列表 + 侧边栏）
 │   ├── Category.vue        # 分类文章列表
 │   ├── Post.vue            # 文章详情 + 评论
 │   └── Search.vue          # 搜索结果页
 └── components/
-    ├── NavBar.vue           # 导航栏（含搜索弹窗/侧边抽屉）
+    ├── NavBar.vue           # 导航栏（搜索框、移动端菜单）
     ├── PostCard.vue         # 文章卡片
     ├── SearchBox.vue        # 搜索输入框
+    ├── Sidebar.vue          # 侧边栏（关于、分类、标签云、热门）
     └── CommentSection.vue   # 评论区
 ```
 
@@ -39,19 +40,9 @@ src/
 
 ### 网站名称
 
-修改以下位置中的「啃书笔记」：
-
-- `index.html` → `<title>`
-- `src/components/NavBar.vue` → `.brand-text` 和 `.drawer-name`
-- `src/views/Home.vue` → `.hero-title`
-
-### 标语
-
-修改以下位置中的「那些啃书的日子，闪闪发光」：
-
-- `index.html` → `<meta name="description">`
-- `src/views/Home.vue` → `.hero-sub`
-- `src/App.vue` → `.footer-tagline`
+- `index.html` → `<title>` 和 `<meta name="description">`
+- `src/components/NavBar.vue` → `.nav-brand` 文字
+- `src/views/Home.vue` → Hero 区域的标题、副标题、个人简介
 
 ### 配色
 
@@ -59,30 +50,24 @@ src/
 
 ```css
 :root {
-  --sakura-pink: #FFB7C5;    /* 主色 */
-  --sakura-light: #FFD6E0;   /* 浅色 */
-  --sky-blue: #87CEEB;       /* 辅助色 */
-  --cream: #FFFAF0;          /* 背景底色 */
-  --radius: 18px;            /* 卡片圆角 */
+  --bg: #f9f7f4;          /* 页面背景 */
+  --card-bg: #ffffff;     /* 卡片背景 */
+  --accent: #c77d5a;      /* 强调色 */
+  --text: #2c2c2c;        /* 正文颜色 */
+  --border: #e8e3dc;      /* 边框色 */
 }
 ```
 
-### 字体
+### 侧边栏「关于我」
 
-CSS 变量 `--font-main` 控制正文字体，顶部 `@import` 引入 Google Fonts。
+编辑 `src/components/Sidebar.vue` 第 9 行的文字。
 
-### 分类与图标
+### 分类与标签
 
-`src/views/Home.vue` 的 `iconMap` 对象，`src/views/Category.vue` 中有一份相同的映射，两边需同步修改。
+分类数据来自后端 API `/api/categories`，标签从文章 `keywords` 字段自动提取。
 
-### 打字机文案
+### API 地址
 
-`src/views/Home.vue` 中 `useTyped(...)` 的第一个参数数组。
+开发：编辑 `src/api/index.js` 的 `API_BASE`，或设置环境变量 `VITE_API_BASE`。
 
-### 布局参数
-
-`src/styles/anime-theme.css`：
-- `.container` → `max-width` 控制页面宽度
-- `@media` 断点控制移动端适配
-
-各组件 `<style scoped>` 中的尺寸、间距直接在该文件中修改。
+生产：`npm run build` 构建 `dist/`，部署到任意静态服务器，确保 `/api` 代理到后端。

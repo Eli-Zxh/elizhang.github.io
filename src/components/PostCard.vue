@@ -1,19 +1,15 @@
 <template>
-  <router-link :to="`/post/${post.path}`" class="post-card card">
-    <div class="post-card-body">
-      <div class="post-card-top">
-        <span class="post-category tag">{{ post.category }}</span>
-        <span v-if="post.created_at" class="post-date">{{ formatDate(post.created_at) }}</span>
-      </div>
-      <h3 class="post-title">{{ post.title }}</h3>
-      <div class="post-meta">
-        <span v-for="kw in keywords" :key="kw" class="tag tag-outline">{{ kw }}</span>
-      </div>
+  <article class="article-card" @click="$router.push(`/post/${post.path}`)">
+    <div class="card-meta">
+      <span class="card-category">{{ post.category }}</span>
+      <span v-if="post.created_at" class="card-date">📅 {{ formatDate(post.created_at) }}</span>
+      <span class="card-read-time">⏱ {{ readTime }}</span>
     </div>
-    <div class="post-card-arrow">
-      <span>→</span>
+    <h3>{{ post.title }}</h3>
+    <div v-if="keywords.length" class="card-tags">
+      <span v-for="kw in keywords" :key="kw" class="tag" @click.stop="$emit('tagClick', kw)">#{{ kw }}</span>
     </div>
-  </router-link>
+  </article>
 </template>
 
 <script setup>
@@ -23,106 +19,105 @@ const props = defineProps({
   post: { type: Object, required: true }
 })
 
+defineEmits(['tagClick'])
+
 const keywords = computed(() => {
   if (!props.post.keywords) return []
-  return props.post.keywords.split(',').slice(0, 5).filter(Boolean)
+  return props.post.keywords.split(',').slice(0, 5).map(k => k.trim()).filter(Boolean)
+})
+
+const readTime = computed(() => {
+  const kw = keywords.value.length
+  if (kw > 15) return '15+ 分钟'
+  if (kw > 8) return '8 分钟'
+  return '5 分钟'
 })
 
 function formatDate(dateStr) {
   if (!dateStr) return ''
   try {
     const d = new Date(dateStr)
-    const month = d.getMonth() + 1
-    const day = d.getDate()
-    return `${month}月${day}日`
-  } catch {
-    return dateStr
-  }
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  } catch { return dateStr }
 }
 </script>
 
 <style scoped>
-.post-card {
+.article-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 24px 26px;
+  border: 1px solid var(--border);
+  transition: var(--transition);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  animation: fadeInUp 0.5s ease forwards;
+}
+.article-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+  border-color: #d9d1c7;
+}
+
+.card-meta {
   display: flex;
   align-items: center;
-  text-decoration: none;
-  color: inherit;
-  padding: 18px 20px;
-  transition: all var(--transition);
-}
-
-.post-card:hover {
-  padding-left: 26px;
-}
-
-.post-card-body {
-  flex: 1;
-  min-width: 0;
-}
-
-.post-card-top {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-
-.post-category {
-  font-size: 12px;
-}
-
-.post-date {
-  font-size: 12px;
+  gap: 14px;
+  font-size: 0.8rem;
   color: var(--text-muted);
-}
-
-.post-title {
-  font-size: 17px;
-  font-weight: 600;
-  margin-bottom: 10px;
-  line-height: 1.5;
-  color: var(--text-dark);
-  /* 两行省略 */
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-}
-
-.post-meta {
-  display: flex;
+  margin-bottom: 8px;
   flex-wrap: wrap;
+}
+
+.card-category {
+  background: var(--accent-light);
+  color: var(--accent);
+  padding: 3px 12px;
+  border-radius: 14px;
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
+
+.card-date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.card-read-time {
+  display: flex;
+  align-items: center;
   gap: 4px;
 }
 
-.post-card-arrow {
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--sakura-light);
+h3 {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  line-height: 1.4;
+  transition: var(--transition);
+  letter-spacing: 0.02em;
+}
+.article-card:hover h3 { color: var(--accent); }
+
+.card-tags {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  color: var(--sakura-deep);
-  opacity: 0;
-  transform: translateX(-8px);
-  transition: all var(--transition);
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.card-tags .tag {
+  cursor: pointer;
+  transition: var(--transition);
+}
+.card-tags .tag:hover {
+  background: #e5ddd4;
+  color: #5c4f42;
 }
 
-.post-card:hover .post-card-arrow {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-@media (max-width: 480px) {
-  .post-card {
-    padding: 14px 16px;
-  }
-
-  .post-title {
-    font-size: 15px;
-  }
+@media (max-width: 600px) {
+  .article-card { padding: 18px; }
+  h3 { font-size: 1.05rem; }
 }
 </style>

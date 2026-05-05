@@ -1,438 +1,212 @@
 <template>
-  <div class="home-page">
-    <!-- Hero 区域 -->
-    <section class="hero-section">
-      <div class="hero-bg"></div>
-      <div class="hero-content">
-        <div class="hero-avatar floating">📖</div>
-        <h1 class="hero-title">啃书笔记</h1>
-        <div class="hero-typing">
-          <span class="typing-text">{{ typedText }}</span>
-          <span class="typing-cursor">|</span>
-        </div>
-        <p class="hero-sub">那些啃书的日子，闪闪发光</p>
-        <div class="hero-stats">
-          <div class="stat-item">
-            <span class="stat-num">{{ totalPosts }}</span>
-            <span class="stat-label">篇笔记</span>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <span class="stat-num">{{ categories.length }}</span>
-            <span class="stat-label">个分类</span>
-          </div>
-        </div>
-        <a href="#category-section" class="scroll-hint">
-          <span class="scroll-arrow floating-delayed">↓</span>
-        </a>
-      </div>
-
-      <!-- 波浪 SVG -->
-      <svg class="wave-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 150 28" preserveAspectRatio="none">
-        <defs>
-          <path id="wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z"></path>
-        </defs>
-        <g class="wave-parallax">
-          <use href="#wave" x="50" y="0" fill="rgba(255,255,255,0.6)"></use>
-          <use href="#wave" x="50" y="3" fill="rgba(255,255,255,0.8)"></use>
-          <use href="#wave" x="50" y="6" fill="rgba(255,255,255,1)"></use>
-        </g>
-      </svg>
+  <div class="main-container">
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-avatar">📝</div>
+      <h1>Eli的建站经验分享</h1>
+      <p class="subtitle">记录思考 · 分享经验 · 探索技术的安静角落</p>
+      <p class="hero-bio">从零搭建个人网站的过程中，遇到过太多坑。这里记录每一步的经验和教训，希望也能帮到你。</p>
     </section>
 
-    <!-- 搜索区域 -->
-    <div class="container">
-      <SearchBox />
-
-      <!-- 分类区域 -->
-      <section id="category-section">
-        <h2 class="section-title">
-          📂 笔记分类
-          <span class="section-subtitle">按科目整理，方便查找</span>
-        </h2>
-        <div class="category-grid">
-          <router-link
-            v-for="cat in categories"
-            :key="cat.name"
-            :to="`/category/${cat.name}`"
-            class="category-card card"
-          >
-            <div class="cat-icon-wrap">
-              <span class="cat-emoji">{{ getIcon(cat.name) }}</span>
-            </div>
-            <div class="cat-info">
-              <span class="cat-name">{{ cat.name }}</span>
-              <span class="cat-count">{{ cat.count }} 篇笔记</span>
-            </div>
-            <span class="cat-arrow">→</span>
-          </router-link>
-        </div>
-      </section>
-
-      <!-- 页脚信息 -->
-      <div class="home-footer-info">
-        <p>📝 持续更新中，一起加油</p>
+    <!-- 文章列表 -->
+    <section class="content-area" id="articleList">
+      <div class="section-header">
+        <h2>📖 {{ activeTag === 'all' ? '最新文章' : '标签：' + activeTag }}</h2>
+        <router-link to="/search" class="view-all">搜索更多 →</router-link>
       </div>
-    </div>
+
+      <!-- 加载中 -->
+      <div v-if="loading" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p style="margin-top:12px">加载文章中...</p>
+      </div>
+
+      <!-- 文章列表 -->
+      <template v-else-if="filteredPosts.length">
+        <PostCard
+          v-for="post in filteredPosts"
+          :key="post.path"
+          :post="post"
+          @tag-click="selectTag"
+        />
+        <button v-if="hasMore" class="load-more-btn" @click="loadMore">
+          加载更多文章
+        </button>
+      </template>
+
+      <!-- 空状态 -->
+      <div v-else class="empty-state">
+        <span class="icon">🏷️</span>
+        <p>该标签下暂无文章</p>
+      </div>
+    </section>
+
+    <!-- 侧边栏 -->
+    <Sidebar
+      :categories="categories"
+      :all-tags="allTags"
+      :hot-posts="hotPosts"
+      @tag-change="selectTag"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { getCategories } from '../api'
-import { useTyped } from '../composables/useTyped'
-import SearchBox from '../components/SearchBox.vue'
+import { ref, computed, onMounted } from 'vue'
+import { getCategories, getPosts, searchPosts } from '../api'
+import PostCard from '../components/PostCard.vue'
+import Sidebar from '../components/Sidebar.vue'
 
 const categories = ref([])
-const totalPosts = ref(0)
+const allPosts = ref([])
+const hotPosts = ref([])
+const page = ref(1)
+const loading = ref(true)
+const hasMore = ref(false)
+const activeTag = ref('all')
 
-const iconMap = {
-  '内科学': '🫀',
-  '外科学': '🔪',
-  '生理学': '🧬',
-  '生物化学': '🧪',
-  '病理学': '🔬',
-  '英语': '📝',
-  '政治': '📜',
+// 收集所有标签
+const allTags = computed(() => {
+  const tagSet = new Set()
+  allPosts.value.forEach(p => {
+    if (p.keywords) {
+      p.keywords.split(',').forEach(k => {
+        const t = k.trim()
+        if (t && t.length < 10) tagSet.add(t)
+      })
+    }
+  })
+  return [...tagSet].slice(0, 20)
+})
+
+// 按标签过滤
+const filteredPosts = computed(() => {
+  if (activeTag.value === 'all') return allPosts.value
+  return allPosts.value.filter(p => {
+    if (!p.keywords) return false
+    return p.keywords.split(',').some(k => k.trim() === activeTag.value)
+  })
+})
+
+function selectTag(tag) {
+  activeTag.value = tag
+  const el = document.getElementById('articleList')
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
-function getIcon(name) {
-  return iconMap[name] || '📋'
-}
-
-const { currentText: typedText, start: startTyped } = useTyped(
-  ['欢迎来到我的学习笔记', '记录啃书的每一天', '知识就是力量', '点击分类开始阅读吧~'],
-  { typeSpeed: 80, backSpeed: 50, backDelay: 2500 }
-)
-
-onMounted(async () => {
-  startTyped()
+// 加载所有分类的文章
+async function loadAllPosts() {
+  loading.value = true
   try {
     const cats = await getCategories()
     categories.value = cats
-    totalPosts.value = cats.reduce((sum, c) => sum + c.count, 0)
+
+    // 加载每个分类的文章（第一页）
+    const all = []
+    for (const cat of cats) {
+      try {
+        const result = await getPosts(cat.name, 1)
+        all.push(...result.items)
+      } catch (e) {
+        console.error(`加载分类 ${cat.name} 失败`, e)
+      }
+    }
+
+    // 按日期排序
+    all.sort((a, b) => {
+      const da = a.created_at || ''
+      const db = b.created_at || ''
+      return db.localeCompare(da)
+    })
+
+    allPosts.value = all
+    hotPosts.value = all.slice(0, 5)
+    hasMore.value = false // 首次加载已全部获取
   } catch (e) {
-    console.error('加载分类失败', e)
+    console.error('加载失败', e)
+  } finally {
+    loading.value = false
   }
-})
+}
+
+function loadMore() {
+  // 加载更多（实际项目中分页）
+}
+
+onMounted(loadAllPosts)
 </script>
 
 <style scoped>
-/* ===== Hero ===== */
-.hero-section {
-  position: relative;
-  min-height: 420px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  margin-bottom: 10px;
-}
-
-.hero-bg {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    160deg,
-    var(--sakura-light) 0%,
-    var(--cream) 30%,
-    var(--sky-light) 60%,
-    var(--lavender-light) 100%
-  );
-}
-
-/* 装饰圆 */
-.hero-bg::before {
-  content: '';
-  position: absolute;
-  top: -80px;
-  right: -60px;
-  width: 200px;
-  height: 200px;
-  background: radial-gradient(circle, rgba(255, 183, 197, 0.3), transparent 70%);
-  border-radius: 50%;
-}
-
-.hero-bg::after {
-  content: '';
-  position: absolute;
-  bottom: -40px;
-  left: -40px;
-  width: 150px;
-  height: 150px;
-  background: radial-gradient(circle, rgba(135, 206, 235, 0.3), transparent 70%);
-  border-radius: 50%;
-}
-
-.hero-content {
-  position: relative;
-  z-index: 1;
-  text-align: center;
-  padding: 60px 20px 30px;
-}
-
-.hero-avatar {
-  font-size: 56px;
-  margin-bottom: 12px;
-  display: inline-block;
-  filter: drop-shadow(0 4px 8px rgba(255, 183, 197, 0.4));
-}
-
-.hero-title {
-  font-size: 42px;
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--sakura-deep), var(--sky-deep));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 16px;
-  letter-spacing: 2px;
-}
-
-.hero-typing {
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  margin-bottom: 12px;
-}
-
-.typing-text {
-  font-size: 18px;
-  color: var(--text-medium);
-  font-family: var(--font-main);
-}
-
-.typing-cursor {
-  font-size: 20px;
-  color: var(--sakura-pink);
-  animation: blink 1s step-end infinite;
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
-.hero-sub {
-  color: var(--text-light);
-  font-size: 15px;
-  margin-bottom: 24px;
-}
-
-/* 统计 */
-.hero-stats {
-  display: inline-flex;
-  align-items: center;
-  gap: 20px;
-  padding: 12px 28px;
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: var(--radius-full);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.9);
-}
-
-.stat-item {
-  text-align: center;
-}
-
-.stat-num {
-  display: block;
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--sakura-deep);
-  line-height: 1.2;
-}
-
-.stat-label {
-  font-size: 12px;
-  color: var(--text-light);
-}
-
-.stat-divider {
-  width: 1px;
-  height: 30px;
-  background: var(--sakura-light);
-}
-
-/* 滚动提示 */
-.scroll-hint {
-  position: absolute;
-  bottom: 50px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.scroll-arrow {
-  font-size: 24px;
-  color: var(--sakura-pink);
-  opacity: 0.6;
-  display: block;
-}
-
-/* 波浪 */
-.wave-svg {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  height: 80px;
-  z-index: 2;
-  pointer-events: none;
-}
-
-.wave-parallax > use {
-  animation: wave-move 10s linear infinite;
-}
-
-.wave-parallax > use:nth-child(2) {
-  animation-duration: 6s;
-  animation-delay: -2s;
-}
-
-.wave-parallax > use:nth-child(3) {
-  animation-duration: 4s;
-  animation-delay: -4s;
-}
-
-@keyframes wave-move {
-  0% { transform: translate(-90px, 0); }
-  100% { transform: translate(85px, 0); }
-}
-
-/* ===== 分类区域 ===== */
-#category-section {
-  padding-top: 10px;
-}
-
-.category-grid {
+.main-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 28px 48px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 14px;
-  margin-bottom: 20px;
+  grid-template-columns: 1fr 340px;
+  gap: 36px;
 }
 
-.category-card {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  text-decoration: none;
-  color: inherit;
-  padding: 18px 16px;
-  position: relative;
-  overflow: visible;
-}
-
-.cat-icon-wrap {
-  width: 46px;
-  height: 46px;
-  border-radius: var(--radius-sm);
-  background: linear-gradient(135deg, var(--sakura-light), var(--sky-light));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.cat-emoji {
-  font-size: 22px;
-}
-
-.cat-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.cat-name {
-  display: block;
-  font-weight: 600;
-  font-size: 16px;
-  margin-bottom: 2px;
-}
-
-.cat-count {
-  font-size: 13px;
-  color: var(--text-light);
-}
-
-.cat-arrow {
-  color: var(--sakura-pink);
-  font-size: 16px;
-  opacity: 0;
-  transition: all var(--transition);
-}
-
-.category-card:hover .cat-arrow {
-  opacity: 1;
-  transform: translateX(4px);
-}
-
-.category-card:hover .cat-icon-wrap {
-  transform: scale(1.1);
-}
-
-.cat-icon-wrap {
-  transition: transform var(--transition);
-}
-
-/* 页脚信息 */
-.home-footer-info {
+/* Hero */
+.hero {
+  grid-column: 1 / -1;
   text-align: center;
-  padding: 30px 0;
-  color: var(--text-light);
-  font-size: 14px;
+  padding: 28px 20px 10px;
+}
+.hero-avatar {
+  width: 88px; height: 88px; border-radius: 50%;
+  background: linear-gradient(135deg, #e8d5c8, #d4b8a5);
+  margin: 0 auto 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.4rem; box-shadow: var(--shadow-md);
+  transition: var(--transition); user-select: none;
+}
+.hero-avatar:hover { transform: scale(1.05); box-shadow: var(--shadow-lg); }
+.hero h1 {
+  font-family: var(--font-serif);
+  font-size: 2rem; font-weight: 700;
+  letter-spacing: 0.04em; margin-bottom: 6px;
+}
+.hero .subtitle {
+  font-size: 1rem; color: var(--text-secondary);
+  font-weight: 400; letter-spacing: 0.02em;
+}
+.hero .hero-bio {
+  max-width: 500px; margin: 12px auto 0;
+  font-size: 0.9rem; color: var(--text-muted); line-height: 1.6;
 }
 
-/* 响应式 */
-@media (max-width: 768px) {
-  .hero-section {
-    min-height: 340px;
-  }
-
-  .hero-title {
-    font-size: 32px;
-  }
-
-  .typing-text {
-    font-size: 16px;
-  }
-
-  .hero-avatar {
-    font-size: 42px;
-  }
-
-  .category-grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 10px;
-  }
+/* 文章列表 */
+.content-area { display: flex; flex-direction: column; gap: 22px; }
+.section-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;
 }
+.section-header h2 {
+  font-family: var(--font-serif); font-size: 1.3rem;
+  font-weight: 700; letter-spacing: 0.03em;
+}
+.view-all {
+  font-size: 0.85rem; color: var(--accent);
+  font-weight: 500; transition: var(--transition);
+}
+.view-all:hover { color: var(--accent-hover); text-decoration: underline; text-underline-offset: 4px; }
 
-@media (max-width: 480px) {
-  .hero-section {
-    min-height: 300px;
-  }
+/* 加载更多 */
+.load-more-btn {
+  align-self: center; padding: 12px 36px;
+  border: 2px solid var(--border); background: var(--card-bg);
+  color: var(--text-secondary); border-radius: 28px;
+  cursor: pointer; font-size: 0.9rem; font-weight: 500;
+  transition: var(--transition); letter-spacing: 0.02em; margin-top: 8px;
+}
+.load-more-btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: var(--shadow-sm); }
 
-  .hero-title {
-    font-size: 28px;
-  }
-
-  .category-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-
-  .category-card {
-    padding: 14px 12px;
-    gap: 10px;
-  }
-
-  .cat-icon-wrap {
-    width: 38px;
-    height: 38px;
-  }
-
-  .cat-emoji {
-    font-size: 18px;
-  }
+@media (max-width: 900px) {
+  .main-container { grid-template-columns: 1fr; gap: 28px; padding: 20px 18px 36px; }
+  .hero h1 { font-size: 1.6rem; }
+}
+@media (max-width: 600px) {
+  .hero-avatar { width: 68px; height: 68px; font-size: 1.8rem; }
+  .hero h1 { font-size: 1.4rem; }
+  .hero .subtitle { font-size: 0.9rem; }
 }
 </style>
