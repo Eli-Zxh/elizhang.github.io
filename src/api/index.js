@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://59.110.30.48:8765/api'
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://centered-raleigh-probability-finance.trycloudflare.com'
 
 async function fetchAPI(path) {
   const res = await fetch(`${API_BASE}${path}`)
