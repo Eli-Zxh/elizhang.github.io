@@ -34,7 +34,7 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_API_BASE: http://59.110.30.48:8765/api
+          VITE_API_BASE: https://centered-raleigh-probability-finance.trycloudflare.com/api
 
       - uses: actions/configure-pages@v4
 
