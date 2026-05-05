@@ -1,10 +1,18 @@
 <template>
   <router-link :to="`/post/${post.path}`" class="post-card card">
-    <h3 class="post-title">{{ post.title }}</h3>
-    <div class="post-meta">
-      <span class="tag" v-for="kw in keywords" :key="kw">{{ kw }}</span>
+    <div class="post-card-body">
+      <div class="post-card-top">
+        <span class="post-category tag">{{ post.category }}</span>
+        <span v-if="post.created_at" class="post-date">{{ formatDate(post.created_at) }}</span>
+      </div>
+      <h3 class="post-title">{{ post.title }}</h3>
+      <div class="post-meta">
+        <span v-for="kw in keywords" :key="kw" class="tag tag-outline">{{ kw }}</span>
+      </div>
     </div>
-    <div class="post-arrow">&gt;</div>
+    <div class="post-card-arrow">
+      <span>→</span>
+    </div>
   </router-link>
 </template>
 
@@ -17,41 +25,68 @@ const props = defineProps({
 
 const keywords = computed(() => {
   if (!props.post.keywords) return []
-  return props.post.keywords.split(',').slice(0, 4).filter(Boolean)
+  return props.post.keywords.split(',').slice(0, 5).filter(Boolean)
 })
+
+function formatDate(dateStr) {
+  if (!dateStr) return ''
+  try {
+    const d = new Date(dateStr)
+    const month = d.getMonth() + 1
+    const day = d.getDate()
+    return `${month}月${day}日`
+  } catch {
+    return dateStr
+  }
+}
 </script>
 
 <style scoped>
 .post-card {
-  display: block;
+  display: flex;
+  align-items: center;
   text-decoration: none;
   color: inherit;
-  position: relative;
-  overflow: hidden;
+  padding: 18px 20px;
+  transition: all var(--transition);
 }
 
-.post-card::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: linear-gradient(180deg, var(--sakura-pink), var(--sky-blue));
-  border-radius: 0 3px 3px 0;
-  opacity: 0;
-  transition: opacity 0.3s;
+.post-card:hover {
+  padding-left: 26px;
 }
 
-.post-card:hover::before {
-  opacity: 1;
+.post-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.post-card-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.post-category {
+  font-size: 12px;
+}
+
+.post-date {
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .post-title {
   font-size: 17px;
-  font-weight: 500;
+  font-weight: 600;
   margin-bottom: 10px;
-  line-height: 1.4;
+  line-height: 1.5;
+  color: var(--text-dark);
+  /* 两行省略 */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .post-meta {
@@ -60,18 +95,34 @@ const keywords = computed(() => {
   gap: 4px;
 }
 
-.post-arrow {
-  position: absolute;
-  right: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--sakura-pink);
-  font-size: 18px;
+.post-card-arrow {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--sakura-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--sakura-deep);
   opacity: 0;
-  transition: opacity 0.3s;
+  transform: translateX(-8px);
+  transition: all var(--transition);
 }
 
-.post-card:hover .post-arrow {
+.post-card:hover .post-card-arrow {
   opacity: 1;
+  transform: translateX(0);
+}
+
+@media (max-width: 480px) {
+  .post-card {
+    padding: 14px 16px;
+  }
+
+  .post-title {
+    font-size: 15px;
+  }
 }
 </style>
